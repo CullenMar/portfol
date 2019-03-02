@@ -1,0 +1,69 @@
+.aboutPictures {
+    display: block;
+    float: right;
+    width: 20%;
+    clear: right;
+    padding-bottom: 15px;
+    padding-right: .5%;
+}
+
+p1{
+    width: 100%;
+    display: inline-block;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    background-color: #a6a6a6;
+    margin-bottom: 15px;
+}
+
+p2{
+    width: 80%;
+    display: inline-block;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    font-size: 30pt;
+    padding-left: 10%;
+    padding-right: 10%;
+    background-color: #626262;
+}
+
+p3{
+    width: 99.5%;
+    display: inline-block;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    background-color: #dddddd;
+    font-size: 25pt;
+    padding-left: .5%;
+}
+
+.titleName {
+    text-align: center;
+    font-size: 40pt;
+    font-family: sans-serif;
+}
+
+.aboutLink{
+    color: black;
+    float: left;
+    width: 33%;
+    text-align:left;
+}
+
+.workLink{
+    color: black;
+    float: left;
+    width: 33%;
+    text-align:center;
+}
+
+.procLink{
+    color: black;
+    float: left;
+    width: 33%;
+    text-align:right;
+}
+
+body {
+    background-color: #4868ff;
+}

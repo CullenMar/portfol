@@ -21,7 +21,7 @@ p2{
     display: inline-block;
     padding-top: 15px;
     padding-bottom: 15px;
-    font-size: 30pt;
+    font-size: 280%;
     padding-left: 10%;
     padding-right: 10%;
     background-color: #626262;
@@ -33,31 +33,41 @@ p3{
     padding-top: 15px;
     padding-bottom: 15px;
     background-color: #dddddd;
-    font-size: 25pt;
+    font-size: 230%;
+    padding-left: .5%;
+}
+
+p4{
+    display: none;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    background-color: #dddddd;
+    font-size: 230%;
+    width: 99.5%;
     padding-left: .5%;
 }
 
 .titleName {
     text-align: center;
-    font-size: 40pt;
+    font-size: 340%;
     font-family: sans-serif;
 }
 
-.aboutLink{
-    color: black;
+#aboutLink{
+    color: white;
     float: left;
     width: 33%;
     text-align:left;
 }
 
-.workLink{
+#workLink{
     color: black;
     float: left;
     width: 33%;
     text-align:center;
 }
 
-.procLink{
+#procLink{
     color: black;
     float: left;
     width: 33%;

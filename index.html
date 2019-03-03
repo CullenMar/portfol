@@ -10,22 +10,37 @@
 
 <script>
 	function jsAbout(){
+		document.getElementById("aboutLink").style.color = "white";
+		document.getElementById("workLink").style.color = "black";
+		document.getElementById("procLink").style.color = "black";
 		
+		document.getElementById("par3").style.display = "inline-block";
+		document.getElementById("par4").style.display = "none";
 	}
 	function jsWork(){
+		document.getElementById("aboutLink").style.color = "black";
+		document.getElementById("workLink").style.color = "white";
+		document.getElementById("procLink").style.color = "black";
 		
+		document.getElementById("par3").style.display = "none";
+		document.getElementById("par4").style.display = "inline-block";
 	}
 	function jsProcedural(){
+		document.getElementById("aboutLink").style.color = "black";
+		document.getElementById("workLink").style.color = "black";
+		document.getElementById("procLink").style.color = "white";
 		
+		document.getElementById("par3").style.display = "none";
+		document.getElementById("par4").style.display = "none";
 	}
 </script>
 
 <body>
 	<p1 class="titleName">Cullen Marchenko, Software Engineer</p1>
 	
-	<p2><a class="aboutLink" href="javascript:jsAbout()">About</a><a class="workLink" href="javascript:jsWork()">Experience</a><a class="procLink" href="javascript:jsProcedural()">ProceduralGen</a></p2>
+	<p2><a id="aboutLink" href="javascript:jsAbout()">About</a><a id="workLink" href="javascript:jsWork()">Experience</a><a id="procLink" href="javascript:jsProcedural()">ProceduralGen</a></p2>
 	
-	<p3>
+	<p3 id="par3">
 		<img src="imgs/selfpic.jpg" alt="self_pic" id="selfPic" class="aboutPictures">
 		<img src="imgs/csumb1.jpg" alt="school_pic" id="schoolPic" class="aboutPictures">
 		My name is Cullen Nicholas Marchenko. I am a graduate of California State University Monterey Bay with a Bachelor's degree in computer science. I graduated from Morro Bay Highschool the spring of 2014 and started
@@ -35,6 +50,15 @@
 		<br><br>
 		Contact Info:<br>Email: marchenkoengi@gmail.com<br>Phone: (805) 704-3842
 	</p3>
+	
+	<p4 id="par4">
+		<img src="imgs/coderdojo1.jpg" alt="work_pic" id="workPic" class="aboutPictures">
+		For a year and a half (2015 -2017) during my college education I taught part time at Hartnell Community College under the Coder Dojo organization. My job was to administer a programming course to kids.
+		The ages of children varied from 5 to 14 and the course material would change based on the age of the class. This job allowed me to gain communication skills with clients (parents), coworkers, and bosses.
+		The picture to the right is the only picture I could find on the <a id="CDlink" href="https://coderdojo.com/">Coder Dojo Website</a>.
+		
+
+	</p4>
 
 </body>
 </html>

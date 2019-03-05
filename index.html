@@ -9,6 +9,14 @@
 </head>
 
 <script>
+	var ROOM_COUNT = 4; //rooms generated
+	var GRID_SIZE = 15; //space for room generation
+	var MISS_COUNTER = 5; //control variable
+	var grid = [];
+	var roomRecords = [];
+	var roomCount = 0;
+	grid = CleanBoard();
+
 	function jsAbout(){
 		document.getElementById("aboutLink").style.color = "white";
 		document.getElementById("workLink").style.color = "black";
@@ -16,6 +24,7 @@
 		
 		document.getElementById("par3").style.display = "inline-block";
 		document.getElementById("par4").style.display = "none";
+		document.getElementById("par5").style.display = "none";
 	}
 	function jsWork(){
 		document.getElementById("aboutLink").style.color = "black";
@@ -24,6 +33,7 @@
 		
 		document.getElementById("par3").style.display = "none";
 		document.getElementById("par4").style.display = "inline-block";
+		document.getElementById("par5").style.display = "none";
 	}
 	function jsProcedural(){
 		document.getElementById("aboutLink").style.color = "black";
@@ -32,7 +42,175 @@
 		
 		document.getElementById("par3").style.display = "none";
 		document.getElementById("par4").style.display = "none";
+		document.getElementById("par5").style.display = "inline-block";
 	}
+	
+	function CleanBoard()//sets all tile data to 0 //and in JS creates the size of the array
+    {
+        var x = 0;
+        var tempArr = [];
+        var returnArr = [];
+        while (x < GRID_SIZE)
+        {
+        	tempArr.push(0);
+        	x++;
+        }
+        x = 0;
+        while (x < GRID_SIZE)
+        {
+            returnArr.push(tempArr.slice());
+            x++;
+        }
+        return returnArr;
+    }
+	
+	function CalculateMove(x, y, direction) //directions = 0-5
+    {
+        var pointReturn;
+        var indent = false;
+        if (y % 2 == 1)
+        {
+            indent = true;
+        }
+        switch (direction)
+        {
+            case 0:
+                if (indent)
+                    x++;
+                y--;
+                break;
+            case 1:
+                x++;
+                break;
+            case 2:
+                if (indent)
+                    x++;
+                y++;
+                break;
+            case 3:
+                if (!indent)
+                    x--;
+                y++;
+                break;
+            case 4:
+                x--;
+                break;
+            case 5:
+                if (!indent)
+                    x--;
+                y--;
+                break;
+        }
+        pointReturn[0] = x;
+        pointReturn[1] = y;
+        return pointReturn;
+    }
+	
+	function BuildRoomHex()
+    {
+        var WALL_SIZE_MAX = 3; //the biggest legnth a wall of a room can generate to
+        var MAX_ITERATIONS = 5; //a control variable
+
+		var testGrid = [];
+        
+        var wallLengths = [0, 0, 0];// [0] = +, [1] = 0, [2] = - //slope of wall length
+        var counter, counter2, ranX = 0, ranY = 0, iteration = 0, wallsAndRoom; //integer variables
+        var pointReturn = [0, 0];//will get returned x,y point from CalculateMove(x,y,direction) function
+        var placeRoom = false, roomError;//boolean variables
+
+        //attempting to place room in current map
+        while (!placeRoom && (iteration <= MAX_ITERATIONS))
+        {//if room is placed this loop will only iterate a single time
+            
+            //System.Array.Copy(tilesGrid, testGrid, System.Convert.ToInt32(System.Math.Pow(mapSize, 2)));
+            testGrid = grid.slice();
+            wallsAndRoom = 1;
+            roomError = false;
+
+            counter = 0;
+            counter2 = 0;
+            while (counter < 3)
+            {//randomizing wall lengths
+            	wallLengths[counter] = Math.floor((Math.random() * WALL_SIZE_MAX) + 1) + Math.floor((Math.random()));
+                counter++;
+            }
+
+            //get random point with enough room to fill out room POINT IS FAR LEFT MOST POINT OF ROOM
+            ranX = Math.floor((Math.random() * ((GRID_SIZE - 1) - ((wallLengths[0] + wallLengths[2] / 2) + wallLengths[1]))));
+            ranY = Math.floor((Math.random() * (GRID_SIZE - wallLengths[2])) + wallLengths[0]);
+            //ranX = RandomNumber(0, ((mapSize - 1) - ((wallLengths[0] + wallLengths[2] / 2) + wallLengths[1]))); c# lines of code, keeping in case i translated incorrectly
+            //ranY = RandomNumber(0 + wallLengths[0], (mapSize - wallLengths[2]));
+
+            while ((wallLengths[0] + wallLengths[1] + wallLengths[2]) > 0 && (!roomError))//(wallLengths[0] > 0 || wallLengths[1] > 0 || wallLengths[2] > 0)
+            {//this is the layering loop that allows the insides of the room to be filled aswell
+
+                //test initial point and wall, counter will be used to measure walls out
+                counter2 = 0;
+                while (!roomError && counter2 < 6)
+                {//count out wall sides
+
+                    counter = wallLengths[counter2 % 3];//set counter to wall size
+                    while (counter > 0)
+                    {//Measure out wall
+                        if (testGrid[ranX, ranY] == 0 || wallsAndRoom == 2)
+                        {
+                            testGrid[ranX, ranY] = wallsAndRoom;
+                            pointReturn = CalculateMove(ranX, ranY, counter2);//direction 0 is up and to the right
+                        }
+                        else
+                        {
+                            roomError = true;
+                            console.log("X:" + ranX + " Y:" + ranY + " !BREAKOUT"); //this will notify when a room fails to place
+                            break;
+                        }
+                        ranX = pointReturn[0];
+                        ranY = pointReturn[1];
+                        counter--;
+                    }
+                    counter2++;
+                }
+                wallsAndRoom = 2;//changes after walls get placed
+
+                counter2 = 0;
+                //decrease wall lengths to start filling in room
+                while (counter2 < 3)
+                {
+                    wallLengths[counter2]--;
+                    counter2++;
+                }
+
+                //select new point 1 layer inside of walls
+                pointReturn = CalculateMove(ranX, ranY, 1);
+                ranX = pointReturn[0];
+                ranY = pointReturn[1];
+            }
+            if (wallLengths[0] == 0 && wallLengths[1] == 0 && wallLengths[2] == 0)
+            {//needed for getting last(center) point when all walls are of equal length (aka perfect hexagon room)
+                testGrid[ranX, ranY] = 2;
+            }
+            iteration++;
+
+            if (!roomError)
+            {//if roomError = false at this point then the room had no collisions
+                placeRoom = true;
+            }
+        }
+
+        if (placeRoom)//place the room if no errors
+        {
+            //record a point inside the room for future connection
+            roomRecords[roomCount, 0] = ranX;
+            roomRecords[roomCount, 1] = ranY;
+            roomRecords[roomCount, 2] = 0; //Used for connecting rooms
+            roomCount++;
+            //place the room into gamecontroller grid
+            //System.Array.Copy(testGrid, tilesGrid, System.Convert.ToInt32(System.Math.Pow(mapSize, 2)));
+            return testGrid;
+        } else {
+        	return false;
+        }
+    }
+    //ROOM CONNECTOR FUNCTIONS NEXT
 </script>
 
 <body>
@@ -49,16 +227,21 @@
 		The first image is of myself and the second image is the BIT (Business & Information Technology) building at CSUMB where I spent most waking hours during the second half of my university education.
 		<br><br>
 		Contact Info:<br>Email: marchenkoengi@gmail.com<br>Phone: (805) 704-3842
+		
 	</p3>
 	
 	<p4 id="par4">
 		<img src="imgs/coderdojo1.jpg" alt="work_pic" id="workPic" class="aboutPictures">
 		For a year and a half (2015 -2017) during my college education I taught part time at Hartnell Community College under the Coder Dojo organization. My job was to administer a programming course to kids.
 		The ages of children varied from 5 to 14 and the course material would change based on the age of the class. This job allowed me to gain communication skills with clients (parents), coworkers, and bosses.
-		The picture to the right is the only picture I could find on the <a id="CDlink" href="https://coderdojo.com/">Coder Dojo Website</a>.
+		The picture to the right is the only picture with me still in it on the <a id="CDlink" href="https://coderdojo.com/">Coder Dojo Website</a>.
 		
 
 	</p4>
+	
+	<p5 id="par5">
+		
+	</p5>
 
 </body>
 </html>

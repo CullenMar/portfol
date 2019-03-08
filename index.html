@@ -9,7 +9,8 @@
 </head>
 
 <script>
-	var ROOM_COUNT = 4; //rooms generated
+    //global vars procedural generation
+	var ROOM_COUNT = 3; //rooms generated
 	var GRID_SIZE = 15; //space for room generation
 	var MISS_COUNTER = 5; //control variable
 	var grid = [];
@@ -45,7 +46,40 @@
 		document.getElementById("par5").style.display = "inline-block";
 	}
 	
-	function CleanBoard()//sets all tile data to 0 //and in JS creates the size of the array
+	function GenerateBoard(){
+	    var counter1 = 0, counter2;
+	    var roomError = 0;
+	    var returnVals;
+	    //grid = CleanBoard().slice();
+	    ArrayCopier(grid, CleanBoard(), GRID_SIZE);
+	    while (counter1 < ROOM_COUNT && roomError < MISS_COUNTER){
+	        returnVals = BuildRoomHex();//build a room
+	        counter2 = 0;
+	        while (counter2 < MISS_COUNTER){
+	            if (returnVals){
+	                grid = returnVals.slice();//put room in global grid
+	                console.log("roomCreated " + counter2);
+	                counter1++;
+	                break;
+	            } else {
+	                console.log("!OVERALL ROOM ERROR.");
+	                roomError++;
+	            }
+	            counter2++;
+	        }
+	    }
+	    console.log(grid);
+	}
+	
+	function ArrayCopier(inputArr1, outputArr2, size){ //2D array copier by value
+	    var counter = 0;
+	    while (counter < size){
+	        outputArr2[counter] = inputArr1[counter].slice();
+	        counter++;
+	    }
+	}
+	
+	function CleanBoard()//sets all tile data to 0 //and in JS creates the size of the array by filling in zeroes
     {
         var x = 0;
         var tempArr = [];
@@ -66,7 +100,7 @@
 	
 	function CalculateMove(x, y, direction) //directions = 0-5
     {
-        var pointReturn;
+        var pointReturn = [];
         var indent = false;
         if (y % 2 == 1)
         {
@@ -106,7 +140,7 @@
         return pointReturn;
     }
 	
-	function BuildRoomHex()
+	function BuildRoomHex()//generates a room inside given area
     {
         var WALL_SIZE_MAX = 3; //the biggest legnth a wall of a room can generate to
         var MAX_ITERATIONS = 5; //a control variable
@@ -152,9 +186,9 @@
                     counter = wallLengths[counter2 % 3];//set counter to wall size
                     while (counter > 0)
                     {//Measure out wall
-                        if (testGrid[ranX, ranY] == 0 || wallsAndRoom == 2)
+                        if (testGrid[ranX][ranY] == 0 || wallsAndRoom == 2)
                         {
-                            testGrid[ranX, ranY] = wallsAndRoom;
+                            testGrid[ranX][ranY] = wallsAndRoom;
                             pointReturn = CalculateMove(ranX, ranY, counter2);//direction 0 is up and to the right
                         }
                         else
@@ -186,7 +220,7 @@
             }
             if (wallLengths[0] == 0 && wallLengths[1] == 0 && wallLengths[2] == 0)
             {//needed for getting last(center) point when all walls are of equal length (aka perfect hexagon room)
-                testGrid[ranX, ranY] = 2;
+                testGrid[ranX][ranY] = 2;
             }
             iteration++;
 
@@ -210,7 +244,311 @@
         	return false;
         }
     }
-    //ROOM CONNECTOR FUNCTIONS NEXT
+    
+    function CalcMovesBetweenPoints(x1, y1, x2, y2) //takes 2 points as input, calculates minimal movement required to connect the points, and returns movement required to get from the first point to the second
+    {
+        //PathReturn returnVals = new PathReturn(); //Not using PathReturn class
+        var returnVals = [
+            [0, 0],
+            [0, 0],
+        ];
+        var secretVal1 = [0, 0];
+        var secretVal2 = [0, 0];
+
+        var tempX, tempY;
+        var tempHold = [0, 0];
+        var counter1;
+
+        //This calculates the 'column' that a point resides on
+        secretVal1[0] = y1 - (x1 * 2) - (y1 % 2);//Negative columns
+        secretVal2[0] = y2 - (x2 * 2) - (y2 % 2);
+        secretVal1[1] = x1 + (y1 / 2) + (y1 % 2);//Positive columns
+        secretVal2[1] = x2 + (y2 / 2) + (y2 % 2);
+
+        if (y1 == y2)//checks if two points are on same row (if they are then it does the math stuff)
+        {
+            returnVals[1][0] = -1;
+            returnVals[1][1] = 0;//this needs to be set to be set to zero so that it passes the proper value to be used by the handler function (ConnectPoints)
+            returnVals[0][1] = Math.abs(x1 - x2);
+            if (x1 < x2)
+                returnVals[0][0] = 1;
+            else
+                returnVals[0][0] = 4;
+            return returnVals;
+        }
+        if (secretVal1[0] == secretVal2[0])//check if two points are on same negatively sloped column
+        {
+            returnVals[1][0] = -1;
+            returnVals[1][1] = 0;
+            returnVals[0][1] = Math.abs(y1 - y2);
+            if (y1 < y2)
+                returnVals[0][0] = 2;
+            else
+                returnVals[0][0] = 5;
+            return returnVals;
+        }
+        if (secretVal1[1] == secretVal2[1])//check if two points are on same positively sloped column
+        {
+            returnVals[1][0] = -1;
+            returnVals[1][1] = 0;
+            returnVals[0][1] = Math.abs(y1 - y2);
+            if (y1 < y2)
+                returnVals[0][0] = 3;
+            else
+                returnVals[0][0] = 0;
+            return returnVals;
+        }
+
+        counter1 = 0;
+        tempY = y1;
+        tempX = x1;
+        //this chunk calculates directional movement required in order to get from one point to another with minimal movement
+        if (y1 > y2)//checks if 2nd point is above
+        {
+            if (secretVal1[1] < secretVal2[1])//checks if 2nd point is to the right
+            {
+                returnVals[0][0] = 0;
+                returnVals[1][0] = 1;
+
+                while (tempY != y2)
+                {
+                    tempHold = CalculateMove(tempX, tempY, 0);
+                    tempX = tempHold[0];
+                    tempY = tempHold[1];
+                    counter1++;
+                }
+
+                returnVals[0][1] = counter1; //length of primary direction
+                returnVals[1][1] = x2 - tempX; //length of secondary direction
+            }
+            else if (secretVal1[0] > secretVal2[0])//checks if 2nd point is center
+            {
+                returnVals[0][0] = 5;
+                returnVals[1][0] = 0;
+
+                while (tempY != y2)
+                {
+                    tempHold = CalculateMove(tempX, tempY, 5);
+                    tempX = tempHold[0];
+                    tempY = tempHold[1];
+                    counter1++;
+                }
+
+                returnVals[0][1] = counter1 - (x2 - tempX);
+                returnVals[1][1] = x2 - tempX;
+            }
+            else //we can assume that the 2nd point is to the left
+            {
+                returnVals[0][0] = 5;
+                returnVals[1][0] = 4;
+
+                while (tempY != y2)
+                {
+                    tempHold = CalculateMove(tempX, tempY, 5);
+                    tempX = tempHold[0];
+                    tempY = tempHold[1];
+                    counter1++;
+                }
+
+                returnVals[0][1] = counter1;
+                returnVals[1][1] = tempX - x2;
+            }
+        }
+        else//We now handle (and assume) the 2nd point below the 1st
+        {
+            if (secretVal1[0] > secretVal2[0])//checks if 2nd point is to the right
+            {
+                returnVals[0][0] = 2;
+                returnVals[1][0] = 1;
+
+                while (tempY != y2)
+                {
+                    tempHold = CalculateMove(tempX, tempY, 2);
+                    tempX = tempHold[0];
+                    tempY = tempHold[1];
+                    counter1++;
+                }
+
+                returnVals[0][1] = counter1;
+                returnVals[1][1] = x2 - tempX;
+            }
+            else if (secretVal1[1] < secretVal2[1])//checks if 2nd point is center
+            {
+                returnVals[0][0] = 3;
+                returnVals[1][0] = 2;
+
+                while (tempY != y2)
+                {
+                    tempHold = CalculateMove(tempX, tempY, 3);
+                    tempX = tempHold[0];
+                    tempY = tempHold[1];
+                    counter1++;
+                }
+
+                returnVals[0][1] = counter1 - (x2 - tempX);
+                returnVals[1][1] = x2 - tempX;
+            }
+            else //we can assume that the 2nd point is to the left
+            {
+                returnVals[0][0] = 3;
+                returnVals[1][0] = 4;
+
+                while (tempY != y2)
+                {
+                    tempHold = CalculateMove(tempX, tempY, 3);
+                    tempX = tempHold[0];
+                    tempY = tempHold[1];
+                    counter1++;
+                }
+
+                returnVals[0][1] = counter1;
+                returnVals[1][1] = tempX - x2;
+            }
+        }
+        
+        return returnVals;
+    }
+    
+    function ConnectPoints(pathing, sX, sY)
+    {
+        var nextPt = [0][0];
+        var chosenDirection;
+        var testGrid = [];
+        testGrid = grid.slice();
+
+        while (0 < pathing[0][1] + pathing[1][1])
+        {
+            if (Math.floor((Math.random() * pathing[0][1] + pathing[1][1])) < pathing[0][1])//(RandomNumber(0, pathing.dirAndLength[0, 1] + pathing.dirAndLength[1, 1]) < pathing.dirAndLength[0, 1])
+            {//randomly chooses one of the two directions to go
+                nextPt = CalculateMove(sX, sY, pathing[0][0]);
+                pathing[0][1]--;
+            }
+            else
+            {
+                nextPt = CalculateMove(sX, sY, pathing[1][0]);
+                pathing[1][1]--;
+            }
+
+            sX = nextPt[0];
+            sY = nextPt[1];
+            testGrid[sX][sY] = 3;//this line writes into the actual game and creates the 'hallways'
+        }
+        
+        return testGrid;
+    }
+    
+    function ConnectAllRooms()
+    {
+        var counter1 = 0, counter2 = 0;
+        var weightCalc = []; //holds weights for all rooms given a room
+        //int[,,] weightHolder = new int[roomCount, 4, 2]; //records closest 4 room indexes from weightCalc//third param indicates roomIndex or weight assoiciation
+        var weightHolder = [];
+        
+        counter1 = 0;
+        counter2 = 0;
+        while (counter2 < roomCount)
+        {//set values to bogus data to be checked upon later(or to just prevent calling null values)
+            weightHolder[counter2][0][1] = -1;
+            weightHolder[counter2][0][0] = -1;
+            weightHolder[counter2][1][1] = -1;
+            weightHolder[counter2][1][0] = -1;
+            weightHolder[counter2][2][1] = -1;
+            weightHolder[counter2][2][0] = -1;
+            weightHolder[counter2][3][1] = -1;
+            weightHolder[counter2][3][0] = -1;
+            counter2++;
+        }
+
+        //calculates weights(sudo-distances) between rooms and then records the 4 closest rooms to any given room
+        while (counter1 < roomCount)
+        {//outter loop iterates through each recorded room
+            counter2 = 0;
+            while (counter2 < roomCount)
+            {//1st inner loop compares current room to all other rooms
+                if (counter1 != counter2)
+                    weightCalc[counter2] = Math.abs(roomRecords[counter1][0] - roomRecords[counter2][0]) + Math.abs(roomRecords[counter1][1] - roomRecords[counter2][1]);
+                else
+                    weightCalc[counter2] = -1;
+                counter2++;
+            }
+
+            counter2 = 0;
+            while (counter2 < roomCount)
+            {//place indexes of up to 4 lowest distances into the weightHolder
+                if (weightHolder[counter1][0][1] > weightCalc[counter2] || weightHolder[counter1][0][1] == -1)
+                {
+                    weightHolder[counter1][3][1] = weightHolder[counter1][2][1];
+                    weightHolder[counter1][3][0] = weightHolder[counter1][2][0];
+                    weightHolder[counter1][2][1] = weightHolder[counter1][1][1];
+                    weightHolder[counter1][2][0] = weightHolder[counter1][1][0];
+                    weightHolder[counter1][1][1] = weightHolder[counter1][0][1];
+                    weightHolder[counter1][1][0] = weightHolder[counter1][0][0];
+                    weightHolder[counter1][0][1] = weightCalc[counter2];
+                    weightHolder[counter1][0][0] = counter2;
+                } else if (weightHolder[counter1][1][1] > weightCalc[counter2] || weightHolder[counter1][1][1] == -1)
+                {
+                    weightHolder[counter1][3][1] = weightHolder[counter1][2][1];
+                    weightHolder[counter1][3][0] = weightHolder[counter1][2][0];
+                    weightHolder[counter1][2][1] = weightHolder[counter1][1][1];
+                    weightHolder[counter1][2][0] = weightHolder[counter1][1][0];
+                    weightHolder[counter1][1][1] = weightCalc[counter2];
+                    weightHolder[counter1][1][0] = counter2;
+                } else if (weightHolder[counter1][2][1] > weightCalc[counter2] || weightHolder[counter1][2][1] == -1)
+                {
+                    weightHolder[counter1][3][1] = weightHolder[counter1][2][1];
+                    weightHolder[counter1][3][0] = weightHolder[counter1][2][0];
+                    weightHolder[counter1][2][1] = weightCalc[counter2];
+                    weightHolder[counter1][2][0] = counter2;
+                } else if (weightHolder[counter1][3][1] > weightCalc[counter2] || weightHolder[counter1][3][1] == -1)
+                {
+                    weightHolder[counter1][3][1] = weightCalc[counter2];
+                    weightHolder[counter1][3][0] = counter2;
+                }
+                counter2++;
+            }
+            counter1++;
+        }
+
+        var pathingPoints;
+        var indexConnections = [];//holds every connection to make sure map is fully connected
+        counter1 = 0;
+
+        while (counter1 < (roomCount * 2))
+        {//set some bogey data
+            indexConnections[counter1][0] = -1;
+            counter1++;
+        }
+
+        counter1 = 0;
+        while (counter1 < roomCount)
+        {// ensure that all rooms connect to at least one other room
+            counter2 = 0;
+            while (counter2 < (roomCount * 2))
+            {
+                if (indexConnections[counter2][0] == -1)
+                {//connect the closest most room to current room
+                    indexConnections[counter2][0] = counter1;
+                    indexConnections[counter2][1] = weightHolder[counter1][0][0];
+
+                    roomRecords[counter1][2]++;//increment the third param which tracks the amount of connections that have been made to a room
+                    roomRecords[weightHolder[counter1][0][0], 2]++;//ditto
+
+                    pathingPoints = CalcMovesBetweenPoints(roomRecords[counter1][0], roomRecords[counter1][1], roomRecords[weightHolder[counter1][0][0], 0], roomRecords[weightHolder[counter1][0][0], 1]);
+
+                    //Debug.Log(roomRecords[counter1, 0] + "::" + roomRecords[counter1, 1] + ";;" + roomRecords[weightHolder[counter1, 0, 0], 0] + "::" + roomRecords[weightHolder[counter1, 0, 0], 1]);
+                    grid = ConnectPoints(pathingPoints, roomRecords[counter1][0], roomRecords[counter1][1]).slice();//!!CHANGING GLOBAL grid variable so it is updated upon next iteration
+                    break;
+                }
+                else if ((indexConnections[counter2][0] == counter1 && indexConnections[counter2][1] == weightHolder[counter1][0][0]) || (indexConnections[counter2][1] == counter1 && indexConnections[counter2][0] == weightHolder[counter1][0][0]))
+                    break;//^^this else checks previous connections so that paths are not paved multiple times over
+
+                counter2++;
+            }
+            counter1++;
+        }
+        
+        return
+    }
 </script>
 
 <body>
@@ -235,12 +573,11 @@
 		For a year and a half (2015 -2017) during my college education I taught part time at Hartnell Community College under the Coder Dojo organization. My job was to administer a programming course to kids.
 		The ages of children varied from 5 to 14 and the course material would change based on the age of the class. This job allowed me to gain communication skills with clients (parents), coworkers, and bosses.
 		The picture to the right is the only picture with me still in it on the <a id="CDlink" href="https://coderdojo.com/">Coder Dojo Website</a>.
-		
 
 	</p4>
 	
 	<p5 id="par5">
-		
+		<a id="aboutLink" href="javascript:GenerateBoard()">Reee<i>Fresh</i></a>
 	</p5>
 
 </body>

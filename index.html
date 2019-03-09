@@ -10,11 +10,14 @@
 
 <script>
     //global vars procedural generation
-	var ROOM_COUNT = 3; //rooms generated
+	var ROOM_COUNT = 1; //rooms generated
 	var GRID_SIZE = 15; //space for room generation
 	var MISS_COUNTER = 5; //control variable
 	var grid = [];
 	var roomRecords = [];
+	for (var x = 0; x < ROOM_COUNT; x++){
+	    roomRecords[x] = [0, 0, 0];
+	}
 	var roomCount = 0;
 	grid = CleanBoard();
 
@@ -26,6 +29,7 @@
 		document.getElementById("par3").style.display = "inline-block";
 		document.getElementById("par4").style.display = "none";
 		document.getElementById("par5").style.display = "none";
+		document.getElementById("par51").style.display = "none";
 	}
 	function jsWork(){
 		document.getElementById("aboutLink").style.color = "black";
@@ -35,6 +39,7 @@
 		document.getElementById("par3").style.display = "none";
 		document.getElementById("par4").style.display = "inline-block";
 		document.getElementById("par5").style.display = "none";
+		document.getElementById("par51").style.display = "none";
 	}
 	function jsProcedural(){
 		document.getElementById("aboutLink").style.color = "black";
@@ -44,20 +49,60 @@
 		document.getElementById("par3").style.display = "none";
 		document.getElementById("par4").style.display = "none";
 		document.getElementById("par5").style.display = "inline-block";
+		document.getElementById("par51").style.display = "inline-block";
+		
+		document.getElementById("par51").innerHTML = "<br><b>What is this?</b><br>This is a hexagonally-based procedural map generator. I built this in my own time using Visual Studio and Unity. I created this because I wanted a fun way to further my knowledge of the C# language as well as the Unity UI and am displaying it because it shows what I am mathematically capable of creating on my own. Please click 'Refresh'.";
+	}
+	
+	function DisplayGrid(){
+	    var counter1 = 0, counter2;
+	    document.getElementById("par51").innerHTML = "";
+	    
+	    while (counter1 < GRID_SIZE){
+	        if (counter1 % 2 == 1) { document.getElementById("par51").innerHTML += "&nbsp;&nbsp;&nbsp;" };
+	        counter2 = 0;
+	        while (counter2 < GRID_SIZE){
+	            document.getElementById("par51").innerHTML += SpriteDealer(grid[counter1][counter2]);
+	            counter2++;
+	        }
+	        document.getElementById("par51").innerHTML += "<br>";
+	        counter1++;
+	    }
+	}
+	
+	function SpriteDealer(spriteNum){
+	    var returnVal;
+        switch(spriteNum) {
+            case 0:
+                returnVal = "<img src='imgs/Brick_wall_02_INV.png' alt='tile_0' id='tile0' class='tiles'>";
+                break;
+            case 1:
+                returnVal = "<img src='imgs/Brick_wall_02.png' alt='tile_1' id='tile1' class='tiles'>";
+                break;
+            case 2:
+                returnVal = "<img src='imgs/Brick_Wall_00.png' alt='tile_2' id='tile2' class='tiles'>";
+                break;
+            case 3:
+                returnVal = "<img src='imgs/Brick_wall_03.png' alt='tile_3' id='tile3' class='tiles'>";
+                break;
+        }
+        return returnVal;
 	}
 	
 	function GenerateBoard(){
+	    roomCount = 0;//forgot to set this to 0 and wondered why first time would work but not second time
 	    var counter1 = 0, counter2;
 	    var roomError = 0;
-	    var returnVals;
+	    var returnValues;
 	    //grid = CleanBoard().slice();
-	    ArrayCopier(grid, CleanBoard(), GRID_SIZE);
+	    ArrayCopier(CleanBoard(), grid, GRID_SIZE);
 	    while (counter1 < ROOM_COUNT && roomError < MISS_COUNTER){
-	        returnVals = BuildRoomHex();//build a room
+	        returnValues = BuildRoomHex();//build a room
 	        counter2 = 0;
 	        while (counter2 < MISS_COUNTER){
-	            if (returnVals){
-	                grid = returnVals.slice();//put room in global grid
+	            if (returnValues){
+	                //grid = returnVals.slice();//put room in global grid
+	                ArrayCopier(returnValues, grid, GRID_SIZE);
 	                console.log("roomCreated " + counter2);
 	                counter1++;
 	                break;
@@ -68,7 +113,10 @@
 	            counter2++;
 	        }
 	    }
+	    ConnectAllRooms(); //connects rooms
 	    console.log(grid);
+	    
+	    DisplayGrid();
 	}
 	
 	function ArrayCopier(inputArr1, outputArr2, size){ //2D array copier by value
@@ -135,8 +183,11 @@
                 y--;
                 break;
         }
+        //LEAVING OFF HERE
+        //inversing coordinates 
         pointReturn[0] = x;
         pointReturn[1] = y;
+        console.log(pointReturn);
         return pointReturn;
     }
 	
@@ -157,7 +208,8 @@
         {//if room is placed this loop will only iterate a single time
             
             //System.Array.Copy(tilesGrid, testGrid, System.Convert.ToInt32(System.Math.Pow(mapSize, 2)));
-            testGrid = grid.slice();
+            //testGrid = grid.slice();
+            ArrayCopier(grid, testGrid, GRID_SIZE);
             wallsAndRoom = 1;
             roomError = false;
 
@@ -233,9 +285,9 @@
         if (placeRoom)//place the room if no errors
         {
             //record a point inside the room for future connection
-            roomRecords[roomCount, 0] = ranX;
-            roomRecords[roomCount, 1] = ranY;
-            roomRecords[roomCount, 2] = 0; //Used for connecting rooms
+            roomRecords[roomCount][0] = ranX;
+            roomRecords[roomCount][1] = ranY;
+            roomRecords[roomCount][2] = 0; //Used for connecting rooms
             roomCount++;
             //place the room into gamecontroller grid
             //System.Array.Copy(testGrid, tilesGrid, System.Convert.ToInt32(System.Math.Pow(mapSize, 2)));
@@ -247,11 +299,7 @@
     
     function CalcMovesBetweenPoints(x1, y1, x2, y2) //takes 2 points as input, calculates minimal movement required to connect the points, and returns movement required to get from the first point to the second
     {
-        //PathReturn returnVals = new PathReturn(); //Not using PathReturn class
-        var returnVals = [
-            [0, 0],
-            [0, 0],
-        ];
+        var returnVals77 = [[0, 0], [0, 0]];
         var secretVal1 = [0, 0];
         var secretVal2 = [0, 0];
 
@@ -267,36 +315,36 @@
 
         if (y1 == y2)//checks if two points are on same row (if they are then it does the math stuff)
         {
-            returnVals[1][0] = -1;
-            returnVals[1][1] = 0;//this needs to be set to be set to zero so that it passes the proper value to be used by the handler function (ConnectPoints)
-            returnVals[0][1] = Math.abs(x1 - x2);
+            returnVals77[1][0] = -1;
+            returnVals77[1][1] = 0;//this needs to be set to be set to zero so that it passes the proper value to be used by the handler function (ConnectPoints)
+            returnVals77[0][1] = Math.abs(x1 - x2);
             if (x1 < x2)
-                returnVals[0][0] = 1;
+                returnVals77[0][0] = 1;
             else
-                returnVals[0][0] = 4;
-            return returnVals;
+                returnVals77[0][0] = 4;
+            return returnVals77;
         }
         if (secretVal1[0] == secretVal2[0])//check if two points are on same negatively sloped column
         {
-            returnVals[1][0] = -1;
-            returnVals[1][1] = 0;
-            returnVals[0][1] = Math.abs(y1 - y2);
+            returnVals77[1][0] = -1;
+            returnVals77[1][1] = 0;
+            returnVals77[0][1] = Math.abs(y1 - y2);
             if (y1 < y2)
-                returnVals[0][0] = 2;
+                returnVals77[0][0] = 2;
             else
-                returnVals[0][0] = 5;
-            return returnVals;
+                returnVals77[0][0] = 5;
+            return returnVals77;
         }
         if (secretVal1[1] == secretVal2[1])//check if two points are on same positively sloped column
         {
-            returnVals[1][0] = -1;
-            returnVals[1][1] = 0;
-            returnVals[0][1] = Math.abs(y1 - y2);
+            returnVals77[1][0] = -1;
+            returnVals77[1][1] = 0;
+            returnVals77[0][1] = Math.abs(y1 - y2);
             if (y1 < y2)
-                returnVals[0][0] = 3;
+                returnVals77[0][0] = 3;
             else
-                returnVals[0][0] = 0;
-            return returnVals;
+                returnVals77[0][0] = 0;
+            return returnVals77;
         }
 
         counter1 = 0;
@@ -307,8 +355,8 @@
         {
             if (secretVal1[1] < secretVal2[1])//checks if 2nd point is to the right
             {
-                returnVals[0][0] = 0;
-                returnVals[1][0] = 1;
+                returnVals77[0][0] = 0;
+                returnVals77[1][0] = 1;
 
                 while (tempY != y2)
                 {
@@ -318,13 +366,13 @@
                     counter1++;
                 }
 
-                returnVals[0][1] = counter1; //length of primary direction
-                returnVals[1][1] = x2 - tempX; //length of secondary direction
+                returnVals77[0][1] = counter1; //length of primary direction
+                returnVals77[1][1] = x2 - tempX; //length of secondary direction
             }
             else if (secretVal1[0] > secretVal2[0])//checks if 2nd point is center
             {
-                returnVals[0][0] = 5;
-                returnVals[1][0] = 0;
+                returnVals77[0][0] = 5;
+                returnVals77[1][0] = 0;
 
                 while (tempY != y2)
                 {
@@ -334,13 +382,13 @@
                     counter1++;
                 }
 
-                returnVals[0][1] = counter1 - (x2 - tempX);
-                returnVals[1][1] = x2 - tempX;
+                returnVals77[0][1] = counter1 - (x2 - tempX);
+                returnVals77[1][1] = x2 - tempX;
             }
             else //we can assume that the 2nd point is to the left
             {
-                returnVals[0][0] = 5;
-                returnVals[1][0] = 4;
+                returnVals77[0][0] = 5;
+                returnVals77[1][0] = 4;
 
                 while (tempY != y2)
                 {
@@ -350,16 +398,16 @@
                     counter1++;
                 }
 
-                returnVals[0][1] = counter1;
-                returnVals[1][1] = tempX - x2;
+                returnVals77[0][1] = counter1;
+                returnVals77[1][1] = tempX - x2;
             }
         }
         else//We now handle (and assume) the 2nd point below the 1st
         {
             if (secretVal1[0] > secretVal2[0])//checks if 2nd point is to the right
             {
-                returnVals[0][0] = 2;
-                returnVals[1][0] = 1;
+                returnVals77[0][0] = 2;
+                returnVals77[1][0] = 1;
 
                 while (tempY != y2)
                 {
@@ -369,13 +417,13 @@
                     counter1++;
                 }
 
-                returnVals[0][1] = counter1;
-                returnVals[1][1] = x2 - tempX;
+                returnVals77[0][1] = counter1;
+                returnVals77[1][1] = x2 - tempX;
             }
             else if (secretVal1[1] < secretVal2[1])//checks if 2nd point is center
             {
-                returnVals[0][0] = 3;
-                returnVals[1][0] = 2;
+                returnVals77[0][0] = 3;
+                returnVals77[1][0] = 2;
 
                 while (tempY != y2)
                 {
@@ -385,13 +433,13 @@
                     counter1++;
                 }
 
-                returnVals[0][1] = counter1 - (x2 - tempX);
-                returnVals[1][1] = x2 - tempX;
+                returnVals77[0][1] = counter1 - (x2 - tempX);
+                returnVals77[1][1] = x2 - tempX;
             }
             else //we can assume that the 2nd point is to the left
             {
-                returnVals[0][0] = 3;
-                returnVals[1][0] = 4;
+                returnVals77[0][0] = 3;
+                returnVals77[1][0] = 4;
 
                 while (tempY != y2)
                 {
@@ -401,61 +449,79 @@
                     counter1++;
                 }
 
-                returnVals[0][1] = counter1;
-                returnVals[1][1] = tempX - x2;
+                returnVals77[0][1] = counter1;
+                returnVals77[1][1] = tempX - x2;
             }
         }
-        
-        return returnVals;
+        return returnVals77;
     }
     
     function ConnectPoints(pathing, sX, sY)
     {
-        var nextPt = [0][0];
+        var nextPt = [];
         var chosenDirection;
         var testGrid = [];
-        testGrid = grid.slice();
+        //testGrid = grid.slice();
+        ArrayCopier(grid, testGrid, GRID_SIZE);
 
         while (0 < pathing[0][1] + pathing[1][1])
         {
             if (Math.floor((Math.random() * pathing[0][1] + pathing[1][1])) < pathing[0][1])//(RandomNumber(0, pathing.dirAndLength[0, 1] + pathing.dirAndLength[1, 1]) < pathing.dirAndLength[0, 1])
             {//randomly chooses one of the two directions to go
-                nextPt = CalculateMove(sX, sY, pathing[0][0]);
+                chosenDirection = pathing[0][0];
                 pathing[0][1]--;
             }
             else
             {
-                nextPt = CalculateMove(sX, sY, pathing[1][0]);
+                chosenDirection = pathing[1][0];
                 pathing[1][1]--;
             }
-
+            nextPt = CalculateMove(sX, sY, chosenDirection);
             sX = nextPt[0];
             sY = nextPt[1];
-            testGrid[sX][sY] = 3;//this line writes into the actual game and creates the 'hallways'
+            if (testGrid[sX][sY] != 2) { testGrid[sX][sY] = 3; }//this line writes into the actual game and creates the 'hallways'
+            
+            var counter = 0, sX2, sY2;
+            while (counter < 6){//adding walls around hallways
+                nextPt = CalculateMove(sX, sY, (chosenDirection + counter) % 6);
+                sX2 = nextPt[0];
+                sY2 = nextPt[1];
+                if (testGrid[sX2][sY2] == 0) { testGrid[sX2][sY2] = 1; }
+                counter++;
+            }
+            
         }
-        
         return testGrid;
     }
     
     function ConnectAllRooms()
     {
-        var counter1 = 0, counter2 = 0;
+        var counter1 = 0, counter2;
         var weightCalc = []; //holds weights for all rooms given a room
         //int[,,] weightHolder = new int[roomCount, 4, 2]; //records closest 4 room indexes from weightCalc//third param indicates roomIndex or weight assoiciation
         var weightHolder = [];
+        while (counter1 < ROOM_COUNT){
+            weightHolder[counter1] = [];
+            counter2 = 0;
+            while (counter2 < 4){
+                weightHolder[counter1][counter2] = [0, 0];
+                counter2++;
+            }
+            counter1++;
+        }
         
         counter1 = 0;
         counter2 = 0;
-        while (counter2 < roomCount)
+        while (counter2 < ROOM_COUNT)
         {//set values to bogus data to be checked upon later(or to just prevent calling null values)
-            weightHolder[counter2][0][1] = -1;
             weightHolder[counter2][0][0] = -1;
-            weightHolder[counter2][1][1] = -1;
+            weightHolder[counter2][0][1] = -1;
             weightHolder[counter2][1][0] = -1;
-            weightHolder[counter2][2][1] = -1;
+            weightHolder[counter2][1][1] = -1;
             weightHolder[counter2][2][0] = -1;
-            weightHolder[counter2][3][1] = -1;
+            weightHolder[counter2][2][1] = -1;
             weightHolder[counter2][3][0] = -1;
+            weightHolder[counter2][3][1] = -1;
             counter2++;
         }
 
@@ -509,10 +575,14 @@
             counter1++;
         }
 
-        var pathingPoints;
-        var indexConnections = [];//holds every connection to make sure map is fully connected
+        var pathingPoints = [[0, 0], [0, 0]];
+        var indexConnections = Array();//holds every connection to make sure map is fully connected
         counter1 = 0;
-
+        while (counter1 < roomCount * 2){
+            indexConnections[counter1] = Array();
+            counter1++;
+        }
+        counter1 = 0;
         while (counter1 < (roomCount * 2))
         {//set some bogey data
             indexConnections[counter1][0] = -1;
@@ -531,12 +601,11 @@
                     indexConnections[counter2][1] = weightHolder[counter1][0][0];
 
                     roomRecords[counter1][2]++;//increment the third param which tracks the amount of connections that have been made to a room
-                    roomRecords[weightHolder[counter1][0][0], 2]++;//ditto
-
-                    pathingPoints = CalcMovesBetweenPoints(roomRecords[counter1][0], roomRecords[counter1][1], roomRecords[weightHolder[counter1][0][0], 0], roomRecords[weightHolder[counter1][0][0], 1]);
-
+                    roomRecords[weightHolder[counter1][0][0]][2]++;//ditto
+                    pathingPoints = CalcMovesBetweenPoints(roomRecords[counter1][0], roomRecords[counter1][1], roomRecords[weightHolder[counter1][0][0]][0], roomRecords[weightHolder[counter1][0][0]][1]);
                     //Debug.Log(roomRecords[counter1, 0] + "::" + roomRecords[counter1, 1] + ";;" + roomRecords[weightHolder[counter1, 0, 0], 0] + "::" + roomRecords[weightHolder[counter1, 0, 0], 1]);
-                    grid = ConnectPoints(pathingPoints, roomRecords[counter1][0], roomRecords[counter1][1]).slice();//!!CHANGING GLOBAL grid variable so it is updated upon next iteration
+                    //grid = ConnectPoints(pathingPoints, roomRecords[counter1][0], roomRecords[counter1][1]).slice();
+                    ArrayCopier(ConnectPoints(pathingPoints, roomRecords[counter1][0], roomRecords[counter1][1]), grid, GRID_SIZE);//!!CHANGING GLOBAL grid variable so it is updated upon next iteration
                     break;
                 }
                 else if ((indexConnections[counter2][0] == counter1 && indexConnections[counter2][1] == weightHolder[counter1][0][0]) || (indexConnections[counter2][1] == counter1 && indexConnections[counter2][0] == weightHolder[counter1][0][0]))
@@ -546,8 +615,7 @@
             }
             counter1++;
         }
-        
-        return
+        return;//no return value because function currently acting on higher level
     }
 </script>
 
@@ -577,8 +645,10 @@
 	</p4>
 	
 	<p5 id="par5">
-		<a id="aboutLink" href="javascript:GenerateBoard()">Reee<i>Fresh</i></a>
+		<a href="javascript:GenerateBoard()">Re<i>fresh</i></a><br>
 	</p5>
-
+    <p51 id="par51">
+        
+    </p51>
 </body>
 </html>

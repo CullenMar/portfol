@@ -46,6 +46,19 @@ p4{
     width: 99.5%;
     padding-left: .5%;
 }
+p5{
+    text-align: center;
+    background-color: #dddddd;
+    width: 100%;
+    font-size: 230%;
+    display: none;
+}
+p51{
+    background-color: #dddddd;
+    width: 100%;
+    font-size: 230%;
+    display: none;
+}
 
 .titleName {
     text-align: center;
@@ -76,4 +89,8 @@ p4{
 
 body {
     background-color: #4868ff;
+}
+
+.tiles{
+    width: 4%;
 }

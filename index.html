@@ -10,8 +10,8 @@
 
 <script>
     //global vars procedural generation
-	var ROOM_COUNT = 1; //rooms generated
-	var GRID_SIZE = 15; //space for room generation
+	var ROOM_COUNT = 4; //rooms generated
+	var GRID_SIZE = 20; //space for room generation
 	var MISS_COUNTER = 5; //control variable
 	var grid = [];
 	var roomRecords = [];
@@ -54,12 +54,27 @@
 		document.getElementById("par51").innerHTML = "<br><b>What is this?</b><br>This is a hexagonally-based procedural map generator. I built this in my own time using Visual Studio and Unity. I created this because I wanted a fun way to further my knowledge of the C# language as well as the Unity UI and am displaying it because it shows what I am mathematically capable of creating on my own. Please click 'Refresh'.";
 	}
 	
+	function ShuffleBoard(){//for some reason x and y coordinates seem to be swapped after translating from c# to js
+	    var counter1 = 0, counter2;
+	    var tempVal;
+	    while (counter1 < GRID_SIZE){
+	        counter2 = counter1 + 1;
+	        while (counter2 < GRID_SIZE){
+	            tempVal = grid[counter1][counter2];
+	            grid[counter1][counter2] = grid[counter2][counter1];
+	            grid[counter2][counter1] = tempVal;
+	            counter2++;
+	        }
+	        counter1++;
+	    }
+	}
+	
 	function DisplayGrid(){
 	    var counter1 = 0, counter2;
 	    document.getElementById("par51").innerHTML = "";
 	    
 	    while (counter1 < GRID_SIZE){
-	        if (counter1 % 2 == 1) { document.getElementById("par51").innerHTML += "&nbsp;&nbsp;&nbsp;" };
+	        if (counter1 % 2 == 1) { document.getElementById("par51").innerHTML += "<img src='imgs/Brick_wall_ALL_INV.png' alt='tile_IND' id='tileIndent' class='tiles'>" };
 	        counter2 = 0;
 	        while (counter2 < GRID_SIZE){
 	            document.getElementById("par51").innerHTML += SpriteDealer(grid[counter1][counter2]);
@@ -68,6 +83,8 @@
 	        document.getElementById("par51").innerHTML += "<br>";
 	        counter1++;
 	    }
+	    
+	    
 	}
 	
 	function SpriteDealer(spriteNum){
@@ -114,6 +131,7 @@
 	        }
 	    }
 	    ConnectAllRooms(); //connects rooms
+	    ShuffleBoard();
 	    console.log(grid);
 	    
 	    DisplayGrid();
@@ -183,32 +201,27 @@
                 y--;
                 break;
         }
-        //LEAVING OFF HERE
-        //inversing coordinates 
         pointReturn[0] = x;
         pointReturn[1] = y;
-        console.log(pointReturn);
         return pointReturn;
     }
 	
 	function BuildRoomHex()//generates a room inside given area
     {
-        var WALL_SIZE_MAX = 3; //the biggest legnth a wall of a room can generate to
+        var WALL_SIZE_MAX = 2; //the biggest legnth a wall of a room can generate to
         var MAX_ITERATIONS = 5; //a control variable
 
 		var testGrid = [];
         
-        var wallLengths = [0, 0, 0];// [0] = +, [1] = 0, [2] = - //slope of wall length
+        var wallLengths = [0, 0, 0], wallLengthIndent = [];// [0] = +, [1] = 0, [2] = - //slope of wall length
         var counter, counter2, ranX = 0, ranY = 0, iteration = 0, wallsAndRoom; //integer variables
+        var recordXY = [];//added to better track rooms
         var pointReturn = [0, 0];//will get returned x,y point from CalculateMove(x,y,direction) function
         var placeRoom = false, roomError;//boolean variables
 
         //attempting to place room in current map
         while (!placeRoom && (iteration <= MAX_ITERATIONS))
         {//if room is placed this loop will only iterate a single time
-            
-            //System.Array.Copy(tilesGrid, testGrid, System.Convert.ToInt32(System.Math.Pow(mapSize, 2)));
-            //testGrid = grid.slice();
             ArrayCopier(grid, testGrid, GRID_SIZE);
             wallsAndRoom = 1;
             roomError = false;
@@ -217,27 +230,29 @@
             counter2 = 0;
             while (counter < 3)
             {//randomizing wall lengths
-            	wallLengths[counter] = Math.floor((Math.random() * WALL_SIZE_MAX) + 1) + Math.floor((Math.random()));
+            	wallLengths[counter] = Math.floor((Math.random() * WALL_SIZE_MAX) + 1) + 1;
                 counter++;
             }
 
-            //get random point with enough room to fill out room POINT IS FAR LEFT MOST POINT OF ROOM
+            //get random point with enough playspace to fill out room, INITAL POINT IS FAR LEFT MOST POINT OF ROOM
             ranX = Math.floor((Math.random() * ((GRID_SIZE - 1) - ((wallLengths[0] + wallLengths[2] / 2) + wallLengths[1]))));
             ranY = Math.floor((Math.random() * (GRID_SIZE - wallLengths[2])) + wallLengths[0]);
-            //ranX = RandomNumber(0, ((mapSize - 1) - ((wallLengths[0] + wallLengths[2] / 2) + wallLengths[1]))); c# lines of code, keeping in case i translated incorrectly
-            //ranY = RandomNumber(0 + wallLengths[0], (mapSize - wallLengths[2]));
+            
+            recordXY[0] = ranX;//added code to find relative center of room
+            recordXY[1] = ranY;
+            wallLengthIndent = wallLengths[1];
 
-            while ((wallLengths[0] + wallLengths[1] + wallLengths[2]) > 0 && (!roomError))//(wallLengths[0] > 0 || wallLengths[1] > 0 || wallLengths[2] > 0)
+            while ((wallLengths[0] + wallLengths[1] + wallLengths[2]) > 0 && (!roomError))
             {//this is the layering loop that allows the insides of the room to be filled aswell
-
                 //test initial point and wall, counter will be used to measure walls out
                 counter2 = 0;
+                
                 while (!roomError && counter2 < 6)
                 {//count out wall sides
-
                     counter = wallLengths[counter2 % 3];//set counter to wall size
                     while (counter > 0)
                     {//Measure out wall
+                        //roomIterate++;
                         if (testGrid[ranX][ranY] == 0 || wallsAndRoom == 2)
                         {
                             testGrid[ranX][ranY] = wallsAndRoom;
@@ -256,26 +271,24 @@
                     counter2++;
                 }
                 wallsAndRoom = 2;//changes after walls get placed
-
                 counter2 = 0;
-                //decrease wall lengths to start filling in room
+                
                 while (counter2 < 3)
-                {
+                {//decrease wall lengths to start filling in room
                     wallLengths[counter2]--;
                     counter2++;
                 }
-
-                //select new point 1 layer inside of walls
-                pointReturn = CalculateMove(ranX, ranY, 1);
+                pointReturn = CalculateMove(ranX, ranY, 1);//select new point 1 layer inside of walls
                 ranX = pointReturn[0];
                 ranY = pointReturn[1];
             }
+            
             if (wallLengths[0] == 0 && wallLengths[1] == 0 && wallLengths[2] == 0)
             {//needed for getting last(center) point when all walls are of equal length (aka perfect hexagon room)
                 testGrid[ranX][ranY] = 2;
             }
             iteration++;
-
+            
             if (!roomError)
             {//if roomError = false at this point then the room had no collisions
                 placeRoom = true;
@@ -284,9 +297,15 @@
 
         if (placeRoom)//place the room if no errors
         {
-            //record a point inside the room for future connection
-            roomRecords[roomCount][0] = ranX;
-            roomRecords[roomCount][1] = ranY;
+            counter = 0;
+            
+            while (counter < wallLengthIndent){
+                recordXY = CalculateMove(recordXY[0], recordXY[1], 1);
+                counter++;
+            }
+            console.log(recordXY);
+            roomRecords[roomCount][0] = recordXY[0];//ranX;
+            roomRecords[roomCount][1] = recordXY[1];//ranY;
             roomRecords[roomCount][2] = 0; //Used for connecting rooms
             roomCount++;
             //place the room into gamecontroller grid
@@ -302,7 +321,6 @@
         var returnVals77 = [[0, 0], [0, 0]];
         var secretVal1 = [0, 0];
         var secretVal2 = [0, 0];
-
         var tempX, tempY;
         var tempHold = [0, 0];
         var counter1;
@@ -365,7 +383,6 @@
                     tempY = tempHold[1];
                     counter1++;
                 }
-
                 returnVals77[0][1] = counter1; //length of primary direction
                 returnVals77[1][1] = x2 - tempX; //length of secondary direction
             }
@@ -381,7 +398,6 @@
                     tempY = tempHold[1];
                     counter1++;
                 }
-
                 returnVals77[0][1] = counter1 - (x2 - tempX);
                 returnVals77[1][1] = x2 - tempX;
             }
@@ -397,7 +413,6 @@
                     tempY = tempHold[1];
                     counter1++;
                 }
-
                 returnVals77[0][1] = counter1;
                 returnVals77[1][1] = tempX - x2;
             }
@@ -416,7 +431,6 @@
                     tempY = tempHold[1];
                     counter1++;
                 }
-
                 returnVals77[0][1] = counter1;
                 returnVals77[1][1] = x2 - tempX;
             }
@@ -432,7 +446,6 @@
                     tempY = tempHold[1];
                     counter1++;
                 }
-
                 returnVals77[0][1] = counter1 - (x2 - tempX);
                 returnVals77[1][1] = x2 - tempX;
             }
@@ -448,7 +461,6 @@
                     tempY = tempHold[1];
                     counter1++;
                 }
-
                 returnVals77[0][1] = counter1;
                 returnVals77[1][1] = tempX - x2;
             }
@@ -480,8 +492,8 @@
             sX = nextPt[0];
             sY = nextPt[1];
             if (testGrid[sX][sY] != 2) { testGrid[sX][sY] = 3; }//this line writes into the actual game and creates the 'hallways'
-            
             var counter = 0, sX2, sY2;
+            
             while (counter < 6){//adding walls around hallways
                 nextPt = CalculateMove(sX, sY, (chosenDirection + counter) % 6);
                 sX2 = nextPt[0];
@@ -500,18 +512,20 @@
         var weightCalc = []; //holds weights for all rooms given a room
         //int[,,] weightHolder = new int[roomCount, 4, 2]; //records closest 4 room indexes from weightCalc//third param indicates roomIndex or weight assoiciation
         var weightHolder = [];
+        
         while (counter1 < ROOM_COUNT){
             weightHolder[counter1] = [];
             counter2 = 0;
+            
             while (counter2 < 4){
                 weightHolder[counter1][counter2] = [0, 0];
                 counter2++;
             }
             counter1++;
         }
-        
         counter1 = 0;
         counter2 = 0;
+        
         while (counter2 < ROOM_COUNT)
         {//set values to bogus data to be checked upon later(or to just prevent calling null values)
             weightHolder[counter2][0][0] = -1;
@@ -529,6 +543,7 @@
         while (counter1 < roomCount)
         {//outter loop iterates through each recorded room
             counter2 = 0;
+            
             while (counter2 < roomCount)
             {//1st inner loop compares current room to all other rooms
                 if (counter1 != counter2)
@@ -537,8 +552,8 @@
                     weightCalc[counter2] = -1;
                 counter2++;
             }
-
             counter2 = 0;
+            
             while (counter2 < roomCount)
             {//place indexes of up to 4 lowest distances into the weightHolder
                 if (weightHolder[counter1][0][1] > weightCalc[counter2] || weightHolder[counter1][0][1] == -1)
@@ -574,22 +589,23 @@
             }
             counter1++;
         }
-
         var pathingPoints = [[0, 0], [0, 0]];
         var indexConnections = Array();//holds every connection to make sure map is fully connected
         counter1 = 0;
+        
         while (counter1 < roomCount * 2){
             indexConnections[counter1] = Array();
             counter1++;
         }
         counter1 = 0;
+        
         while (counter1 < (roomCount * 2))
         {//set some bogey data
             indexConnections[counter1][0] = -1;
             counter1++;
         }
-
         counter1 = 0;
+        
         while (counter1 < roomCount)
         {// ensure that all rooms connect to at least one other room
             counter2 = 0;
@@ -646,6 +662,11 @@
 	
 	<p5 id="par5">
 		<a href="javascript:GenerateBoard()">Re<i>fresh</i></a><br>
+		<b>KEY:</b>&nbsp;&nbsp;
+		Unused Space-><img src='imgs/Brick_wall_02_INV.png' alt='tile_0' class='tileInfo'>&nbsp;
+		Walls-><img src='imgs/Brick_wall_02.png' alt='tile_1' class='tileInfo'>&nbsp;
+		Rooms-><img src='imgs/Brick_Wall_00.png' alt='tile_2' class='tileInfo'>&nbsp;
+		Hallways-><img src='imgs/Brick_wall_03.png' alt='tile_3' class='tileInfo'>
 	</p5>
     <p51 id="par51">
         

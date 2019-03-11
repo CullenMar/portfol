@@ -11,13 +11,10 @@
 <script>
     //global vars procedural generation
 	var ROOM_COUNT = 4; //rooms generated
-	var GRID_SIZE = 20; //space for room generation
-	var MISS_COUNTER = 5; //control variable
+	var GRID_SIZE = 18; //space for room generation
+	var MISS_COUNTER = 7; //control variable
 	var grid = [];
 	var roomRecords = [];
-	for (var x = 0; x < ROOM_COUNT; x++){
-	    roomRecords[x] = [0, 0, 0];
-	}
 	var roomCount = 0;
 	grid = CleanBoard();
 
@@ -51,7 +48,24 @@
 		document.getElementById("par5").style.display = "inline-block";
 		document.getElementById("par51").style.display = "inline-block";
 		
-		document.getElementById("par51").innerHTML = "<br><b>What is this?</b><br>This is a hexagonally-based procedural map generator. I built this in my own time using Visual Studio and Unity. I created this because I wanted a fun way to further my knowledge of the C# language as well as the Unity UI and am displaying it because it shows what I am mathematically capable of creating on my own. Please click 'Refresh'.";
+		document.getElementById("par51").innerHTML = "<br><b>What is this?</b><br>This is a hexagonally-based procedural map generator. I built this in my own time using Visual Studio and Unity. I created this because I wanted a fun way to further my knowledge of the C# language as well as the Unity UI and am displaying it because it shows what I am mathematically and programmatically capable of creating on my own. Please click 'Refresh'.";
+	}
+	
+	function EditGlobals(){
+	    var newRoomCount, newGridSize;
+	    newRoomCount = parseInt(document.getElementById("RCedit").value);
+	    newGridSize = parseInt(document.getElementById("GSedit").value);
+	    
+	    if (newRoomCount > 7){ newRoomCount = 7; } else if (newRoomCount < 1) {newRoomCount = 1;}//user must pick between 1 and 7 for rooms
+	    if (newGridSize > 24){ newGridSize = 24; } else if (newGridSize < 10) {newGridSize = 10;}//user must pick between 10 and 24 for rooms
+	    ROOM_COUNT = newRoomCount;//set the globals
+	    GRID_SIZE = newGridSize;
+	    for (var x = 0; x < ROOM_COUNT; x++){
+	        roomRecords[x] = [0, 0, 0];
+	    }
+	    
+	    document.getElementById("RCedit").value = ROOM_COUNT;
+	    document.getElementById("GSedit").value = GRID_SIZE;
 	}
 	
 	function ShuffleBoard(){//for some reason x and y coordinates seem to be swapped after translating from c# to js
@@ -106,25 +120,24 @@
         return returnVal;
 	}
 	
-	function GenerateBoard(){
+	function GenerateBoard(){//GRANDFATHER FUNCTION
 	    roomCount = 0;//forgot to set this to 0 and wondered why first time would work but not second time
 	    var counter1 = 0, counter2;
 	    var roomError = 0;
 	    var returnValues;
-	    //grid = CleanBoard().slice();
+	    EditGlobals();
 	    ArrayCopier(CleanBoard(), grid, GRID_SIZE);
 	    while (counter1 < ROOM_COUNT && roomError < MISS_COUNTER){
 	        returnValues = BuildRoomHex();//build a room
 	        counter2 = 0;
 	        while (counter2 < MISS_COUNTER){
 	            if (returnValues){
-	                //grid = returnVals.slice();//put room in global grid
-	                ArrayCopier(returnValues, grid, GRID_SIZE);
-	                console.log("roomCreated " + counter2);
+	                ArrayCopier(returnValues, grid, GRID_SIZE);//place room in board
+	                console.log("roomCreated");
 	                counter1++;
 	                break;
 	            } else {
-	                console.log("!OVERALL ROOM ERROR.");
+	                console.log("!OVERALL ROOM ERROR.");//A room continuously failed to place
 	                roomError++;
 	            }
 	            counter2++;
@@ -164,7 +177,7 @@
         return returnArr;
     }
 	
-	function CalculateMove(x, y, direction) //directions = 0-5
+	function CalculateMove(x, y, direction) //directions = 0-5, 0 = up right, and continues clockwise 5 = up left
     {
         var pointReturn = [];
         var indent = false;
@@ -208,7 +221,7 @@
 	
 	function BuildRoomHex()//generates a room inside given area
     {
-        var WALL_SIZE_MAX = 2; //the biggest legnth a wall of a room can generate to
+        var WALL_SIZE_MAX = 3; //the biggest legnth a wall of a room can generate to
         var MAX_ITERATIONS = 5; //a control variable
 
 		var testGrid = [];
@@ -230,7 +243,7 @@
             counter2 = 0;
             while (counter < 3)
             {//randomizing wall lengths
-            	wallLengths[counter] = Math.floor((Math.random() * WALL_SIZE_MAX) + 1) + 1;
+            	wallLengths[counter] = Math.floor((Math.random() * WALL_SIZE_MAX) + 1);
                 counter++;
             }
 
@@ -252,7 +265,6 @@
                     counter = wallLengths[counter2 % 3];//set counter to wall size
                     while (counter > 0)
                     {//Measure out wall
-                        //roomIterate++;
                         if (testGrid[ranX][ranY] == 0 || wallsAndRoom == 2)
                         {
                             testGrid[ranX][ranY] = wallsAndRoom;
@@ -261,7 +273,7 @@
                         else
                         {
                             roomError = true;
-                            console.log("X:" + ranX + " Y:" + ranY + " !BREAKOUT"); //this will notify when a room fails to place
+                            console.log("!BREAKOUT"); //this will notify when a room fails to place
                             break;
                         }
                         ranX = pointReturn[0];
@@ -288,6 +300,7 @@
                 testGrid[ranX][ranY] = 2;
             }
             iteration++;
+            if (iteration + 2 >= MAX_ITERATIONS) { WALL_SIZE_MAX = 2; }//budget attempt to get all rooms to be placed without overall room error occuring
             
             if (!roomError)
             {//if roomError = false at this point then the room had no collisions
@@ -303,14 +316,11 @@
                 recordXY = CalculateMove(recordXY[0], recordXY[1], 1);
                 counter++;
             }
-            console.log(recordXY);
             roomRecords[roomCount][0] = recordXY[0];//ranX;
             roomRecords[roomCount][1] = recordXY[1];//ranY;
             roomRecords[roomCount][2] = 0; //Used for connecting rooms
             roomCount++;
-            //place the room into gamecontroller grid
-            //System.Array.Copy(testGrid, tilesGrid, System.Convert.ToInt32(System.Math.Pow(mapSize, 2)));
-            return testGrid;
+            return testGrid;//returning completed grid with room
         } else {
         	return false;
         }
@@ -661,12 +671,17 @@
 	</p4>
 	
 	<p5 id="par5">
-		<a href="javascript:GenerateBoard()">Re<i>fresh</i></a><br>
+		<a href="javascript:GenerateBoard();">Re<i>fresh</i></a><br>
 		<b>KEY:</b>&nbsp;&nbsp;
 		Unused Space-><img src='imgs/Brick_wall_02_INV.png' alt='tile_0' class='tileInfo'>&nbsp;
 		Walls-><img src='imgs/Brick_wall_02.png' alt='tile_1' class='tileInfo'>&nbsp;
 		Rooms-><img src='imgs/Brick_Wall_00.png' alt='tile_2' class='tileInfo'>&nbsp;
 		Hallways-><img src='imgs/Brick_wall_03.png' alt='tile_3' class='tileInfo'>
+		<br>
+		<form>
+		    Max Rooms(1-7):<input type="number" name="roomCountEdit" id="RCedit" value="4" style="font-size: 25px; width: 50px;">
+		    Board Size(10-24):<input type="number" name="gridSizeEdit" id="GSedit" value="18" style="font-size: 25px; width: 50px;">
+		</form>
 	</p5>
     <p51 id="par51">
         
